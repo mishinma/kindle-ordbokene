@@ -135,6 +135,79 @@ class DictionaryEntry:
                 print()
 
 
+def dictionary_entry_to_html(entry: DictionaryEntry, css_file_path='dictionary_style.css') -> str:
+    """
+    Converts a DictionaryEntry instance to an HTML string with external CSS.
+
+    :param entry: DictionaryEntry instance
+    :param css_file_path: Path to the CSS file
+    :return: A string containing HTML representation of the entry
+    """
+    html = f'''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="{css_file_path}">
+        <title>{entry.word}</title>
+    </head>
+    <body>
+        <h1 class="word-title">{entry.word} <span class="part-of-speech">({entry.part_of_speech})</span></h1>
+    '''
+
+    # Adding gender if available
+    if entry.gender:
+        html += f'<div class="gender"><strong>Gender:</strong> {entry.gender}</div>'
+
+    # Adding inflections if available
+    if entry.inflections:
+        html += '<div class="inflections"><strong>Inflections</strong><ul>'
+        for attr, value in vars(entry.inflections).items():
+            if not attr.startswith("_"):  # Skip private attributes or methods
+                html += f'<li class="inflection-item">{attr.replace("_", " ").capitalize()}: {value}</li>'
+        html += '</ul></div>'
+
+    # Adding definitions and examples
+    html += '<div class="definitions"><strong>Definitions</strong><ul>'
+    for definition in entry.definitions:
+        html += f'<li class="definition-item">{", ".join(definition.definition)}</li>'
+        if definition.examples:
+            html += '<ul class="example-list">'
+            for example in definition.examples:
+                html += f'<li class="example-item">{example}</li>'
+            html += '</ul>'
+    html += '</ul></div>'
+
+    # Adding expressions
+    if entry.expressions:
+        html += '<div class="expressions"><strong>Expressions</strong><ul>'
+        for expression in entry.expressions:
+            html += f'<li class="expression-item"><strong>{expression.expression}</strong><ul>'
+            for definition in expression.definitions:
+                html += f'<li class="expression-definition-item">{", ".join(definition.definition)}</li>'
+                if definition.examples:
+                    html += '<ul class="example-list">'
+                    for example in definition.examples:
+                        html += f'<li class="example-item">{example}</li>'
+                    html += '</ul>'
+            html += '</ul></li>'
+        html += '</ul></div>'
+
+    html += '''
+    </body>
+    </html>
+    '''
+
+    return html
+
+# To use this function, simply pass an instance of DictionaryEntry to it.
+# Example usage:
+# html_content = dictionary_entry_to_html(my_entry)
+# This will generate the HTML content string with links to the external CSS for styling.
+
+
+
 # Example of usage
 if __name__ == "__main__":
     verb_inflections = VerbInflections(

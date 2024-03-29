@@ -262,7 +262,7 @@ if __name__ == '__main__':
     #         print(f'{word} - {part_of_speech}')
 
     # find verb-sjonne-cleaned.html
-    html_file = 'verb-sjonne.html'
+    html_file = 'verb-ga.html'
     with open(os.path.join(html_dir, html_file), 'r', encoding='utf-8') as file:
         html_content = file.read()
 
@@ -286,4 +286,10 @@ if __name__ == '__main__':
         )
 
     dict_entry.pretty_print()
-
+    from  dict_entry import dictionary_entry_to_html
+    html = dictionary_entry_to_html(dict_entry)
+    # prettify with bs4
+    soup = BeautifulSoup(html, 'html.parser')
+    html = soup.prettify()
+    with open("../example.html", 'w', encoding='utf-8') as file:
+        file.write(html)
