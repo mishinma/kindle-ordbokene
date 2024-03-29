@@ -10,7 +10,7 @@ VALID_PARTS_OF_SPEECH = [
 class Inflections:
     # General inflection fields, can be extended or used directly if suitable
     # This class can be subclassed for specific needs of nouns, verbs, adjectives, etc.
-    generic_inflections: dict = field(default_factory=dict)
+    # generic_inflections: dict = field(default_factory=dict)
 
     def to_lowercase(self, value: Any) -> Any:
         """Recursively convert strings in a nested structure to lowercase."""
@@ -44,7 +44,6 @@ class VerbInflections(Inflections):
     presens_perfektum: str
     imperativ: str
     perfektum_partisipp_hankjonn: str
-    perfektum_partisipp_hunkjonn: str
     perfektum_partisipp_intetkjonn: str
     perfektum_partisipp_bestemt_form: str
     perfektum_partisipp_flertall: str
@@ -82,8 +81,8 @@ class DictionaryEntry:
         self.word = self.word.lower()
         self.part_of_speech = self.part_of_speech.lower()
         if self.part_of_speech not in self.VALID_PARTS_OF_SPEECH:
-            raise ValueError(f"Invalid part of speech '{self.part_of_speech}'.
-                             Must be one of {', '.join(self.VALID_PARTS_OF_SPEECH)}.")
+            raise ValueError(f"Invalid part of speech '{self.part_of_speech}'."
+                             f"Must be one of {', '.join(self.VALID_PARTS_OF_SPEECH)}.")
 
         # For nouns, gender must be specified
         if self.part_of_speech == "substantiv" and not self.gender:

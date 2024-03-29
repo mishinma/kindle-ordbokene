@@ -1,15 +1,17 @@
 from bs4 import BeautifulSoup, Comment
 
-# Your HTML content
-with open('selenuim_page.html', 'r', encoding='utf-8') as file:
-    html_content = file.read()
 
-soup = BeautifulSoup(html_content, 'html.parser')
+# Define basic elements to keep and clean
+BASIC_ELEMENTS = {
+    'table', 'tr', 'td', 'th', 'thead', 'tbody', 'caption',
+    'li', 'ul', 'div'}
+
 
 # Function to remove comments
 def remove_comments(tag):
     for comment in tag.findAll(string=lambda text: isinstance(text, Comment)):
         comment.extract()
+
 
 # Function to simplify nested spans and remove empty or redundant tags
 def clean_tags(tag):
@@ -27,6 +29,7 @@ def clean_tags(tag):
             # Remove attributes to keep the tag clean
             t.attrs = {}
 
+
 def simplify_list(list_tag):
     soup = BeautifulSoup('', 'html.parser')
     # Create a new list element of the same type (ul or ol)
@@ -43,6 +46,7 @@ def simplify_list(list_tag):
         new_list.append(new_li)
 
     return new_list
+
 
 # # Function to simplify nested spans, remove empty or redundant tags, but keep "class" attributes
 # def clean_tags(tag):
@@ -63,27 +67,45 @@ def simplify_list(list_tag):
 #             if class_attr:
 #                 t['class'] = class_attr
 
-# Define basic elements to keep and clean
-basic_elements = {
-    'table', 'tr', 'td', 'th', 'thead', 'tbody', 'caption',
-    'li', 'ul', 'div'}
 
-# Remove comments from the soup
-remove_comments(soup)
+def clean_document(soup):
+    # Remove comments from the soup
+    remove_comments(soup)
 
-# Find and clean all defined basic elements
-for basic_element in basic_elements:
-    for element in soup.find_all(basic_element):
-        clean_tags(element)
+    # Find and clean all defined basic elements
+    for basic_element in BASIC_ELEMENTS:
+        for element in soup.find_all(basic_element):
+            clean_tags(element)
 
-# Find all ul and ol elements and simplify them
-for list_tag in soup.find_all(['ul']):
-    new_list = simplify_list(list_tag)
-    list_tag.replace_with(new_list)
+    # Find all ul and ol elements and simplify them
+    for list_tag in soup.find_all(['ul']):
+        new_list = simplify_list(list_tag)
+        list_tag.replace_with(new_list)
 
-# Prettify the cleaned HTML
-cleaned_html = soup.prettify()
 
-# Save the cleaned HTML to a file
-with open('cleaned_page.html', 'w', encoding='utf-8') as file:
-    file.write(cleaned_html)
+if __name__ == '__main__':
+    import os
+    # find path to ../html_pages/ and iterate through the .html files
+    html_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'html_pages')
+
+    for html_file in os.listdir(html_dir):
+
+        # If filename ends with -cleaned.html, skip it
+        if html_file.endswith('-cleaned.html'):
+            continue
+
+        if html_file.endswith('.html'):
+            with open(os.path.join(html_dir, html_file), 'r', encoding='utf-8') as file:
+                html_content = file.read()
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Prettify the cleaned HTML
+            cleaned_html = soup.prettify()
+
+            # Save the cleaned HTML to a file with the same name but ending with '-cleaned.html'
+            cleaned_file = html_file.replace('.html', '-cleaned.html')
+            with open(os.path.join(html_dir, cleaned_file), 'w', encoding='utf-8') as file:
+                file.write(cleaned_html)
+
+# Path: mkdict/parse_html.py
