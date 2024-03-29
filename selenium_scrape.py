@@ -4,6 +4,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+
 
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -13,16 +15,19 @@ dest_dir = Path('html_pages')
 # url = 'https://ordbokene.no/bm/53143'  # sjønne
 # fname = 'verb-sjonne.html'
 
-url = 'https://ordbokene.no/bm/66160'  # vakker
-fname = 'adj-vakker.html'
+# url = 'https://ordbokene.no/bm/66160'  # vakker
+# fname = 'adj-vakker.html'
 
-# url = 'https://ordbokene.no/bm/21740'  # gå
+url = 'https://ordbokene.no/bm/21740'  # gå
+fname = "verb-ga.html"
 
 # url = 'https://ordbokene.no/bm/41861'  # og
 # fname = 'konjunksjon-og.html'
 
+options = Options()
+options.add_argument('--headless=new')
 cService = webdriver.ChromeService(executable_path='/usr/bin/chromedriver')
-driver = webdriver.Chrome(service = cService)
+driver = webdriver.Chrome(service = cService, options=options)
 driver.get(url)
 
 try:
