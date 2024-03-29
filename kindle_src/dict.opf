@@ -2,28 +2,24 @@
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="2.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"
             xmlns:opf="http://www.idpf.org/2007/opf">
-    <dc:title>Your Dictionary Title</dc:title>
-    <dc:creator opf:role="aut">Author Name</dc:creator>
-    <dc:language>en-US</dc:language>
+    <dc:title>Ordbøkene</dc:title>
+    <dc:creator opf:role="aut">ordbokene.no</dc:creator>
+    <dc:language>no</dc:language>
     <dc:identifier id="bookid" opf:scheme="ISBN">1234567890123</dc:identifier>
     <meta name="cover" content="cover-image" />
   </metadata>
 
   <manifest>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="file1" href="content/section1.html" media-type="application/xhtml+xml"/>
+    <item id="content000" href="content/content000.xhtml" media-type="application/xhtml+xml"/>
     <item id="css" href="styles/style.css" media-type="text/css"/>
     <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg"/>
     <!-- Add other sections here -->
   </manifest>
 
   <spine toc="ncx">
-    <itemref idref="file1"/>
+    <itemref idref="content000"/>
     <!-- Add other itemrefs here -->
   </spine>
 
-  <guide>
-    <reference type="toc" title="Table of Contents" href="toc.html"/>
-    <reference type="text" title="Begin Reading" href="content/section1.html"/>
-  </guide>
 </package>
