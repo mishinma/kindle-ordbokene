@@ -1,0 +1,63 @@
+body {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    line-height: 1.5;
+    margin: 10px;
+    color: #000;
+    background-color: #fff;
+    font-size: 14px; /* Adjust based on Kindle's screen and readability */
+}
+
+h1.word-title, h2 {
+    font-weight: bold;
+    margin-bottom: 0.75em;
+}
+
+.word-title {
+    font-size: 20px; /* Larger for easy identification */
+}
+
+.part-of-speech {
+    font-style: italic;
+    margin-left: 5px;
+}
+
+.gender, .inflections, .definitions, .expressions {
+    border-top: 1px solid #000; /* Visible separation in black and white */
+    margin-top: 20px;
+    padding-top: 10px;
+}
+
+.inflection-item, .definition-item, .expression-item {
+    margin: 8px 0;
+}
+
+.definition-item {
+    font-weight: bold; /* Make definitions stand out */
+}
+
+.expression-definition-item { /* Make expression definitions normal*/
+    font-weight: normal;
+}
+
+.example-list {
+    padding-left: 20px;
+}
+
+.example-item {
+    font-style: italic;
+}
+
+@media screen and (max-width: 600px) {
+    body {
+        margin: 5px;
+        font-size: 12px; /* Slightly smaller font for very small screens */
+    }
+
+    h1.word-title {
+        font-size: 18px; /* Adjusting for smaller screen */
+    }
+
+    .inflection-item, .definition-item, .expression-item {
+        margin: 5px 0;
+    }
+}
