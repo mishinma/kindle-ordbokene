@@ -13,21 +13,21 @@ def remove_comments(tag):
         comment.extract()
 
 
-# Function to simplify nested spans and remove empty or redundant tags
-def clean_tags(tag):
-    for t in tag.find_all(True, recursive=False):
-        # Recursively clean child tags first
-        clean_tags(t)
+# # Function to simplify nested spans and remove empty or redundant tags
+# def clean_tags(tag):
+#     for t in tag.find_all(True, recursive=False):
+#         # Recursively clean child tags first
+#         clean_tags(t)
 
-        # Simplify nested tags of the same type or spans with no attributes
-        if t.name == t.parent.name or (t.name == 'span' and not t.attrs):
-            t.unwrap()
-        elif not t.contents or all(isinstance(c, str) and c.isspace() for c in t.contents):
-            # If the tag is empty or contains only whitespace
-            t.decompose()
-        else:
-            # Remove attributes to keep the tag clean
-            t.attrs = {}
+#         # Simplify nested tags of the same type or spans with no attributes
+#         if t.name == t.parent.name or (t.name == 'span' and not t.attrs):
+#             t.unwrap()
+#         elif not t.contents or all(isinstance(c, str) and c.isspace() for c in t.contents):
+#             # If the tag is empty or contains only whitespace
+#             t.decompose()
+#         else:
+#             # Remove attributes to keep the tag clean
+#             t.attrs = {}
 
 
 def simplify_list(list_tag):
@@ -48,24 +48,24 @@ def simplify_list(list_tag):
     return new_list
 
 
-# # Function to simplify nested spans, remove empty or redundant tags, but keep "class" attributes
-# def clean_tags(tag):
-#     for t in tag.find_all(True, recursive=False):
-#         # Recursively clean child tags first
-#         clean_tags(t)
+# Function to simplify nested spans, remove empty or redundant tags, but keep "class" attributes
+def clean_tags(tag):
+    for t in tag.find_all(True, recursive=False):
+        # Recursively clean child tags first
+        clean_tags(t)
 
-#         # Simplify nested tags of the same type or spans with no additional information
-#         if t.name == t.parent.name or (t.name == 'span' and not t.attrs.get('class')):
-#             t.unwrap()
-#         elif not t.contents or all(isinstance(c, str) and c.isspace() for c in t.contents):
-#             # If the tag is empty or contains only whitespace
-#             t.decompose()
-#         else:
-#             # Keep the class attribute but remove others
-#             class_attr = t.get('class')
-#             t.attrs = {}
-#             if class_attr:
-#                 t['class'] = class_attr
+        # Simplify nested tags of the same type or spans with no additional information
+        if t.name == t.parent.name or (t.name == 'span' and not t.attrs.get('class')):
+            t.unwrap()
+        elif not t.contents or all(isinstance(c, str) and c.isspace() for c in t.contents):
+            # If the tag is empty or contains only whitespace
+            t.decompose()
+        else:
+            # Keep the class attribute but remove others
+            class_attr = t.get('class')
+            t.attrs = {}
+            if class_attr:
+                t['class'] = class_attr
 
 
 def clean_document(soup):
@@ -99,6 +99,9 @@ if __name__ == '__main__':
                 html_content = file.read()
 
             soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Clean the HTML document
+            clean_document(soup)
 
             # Prettify the cleaned HTML
             cleaned_html = soup.prettify()

@@ -1,9 +1,20 @@
 from dataclasses import dataclass, field
-from typing import List, Union, Optional, Any
+from typing import List, Optional, Any, Tuple, Dict
 
 VALID_PARTS_OF_SPEECH = [
     "verb", "substantiv", "adjektiv", "determinativ",
     "pronomen", "adverb", "preposisjon", "konjunksjon", "interjeksjon"]
+
+
+@dataclass
+class Definition:
+    definition: List[str]
+    examples: List[str] = field(default_factory=list)
+
+@dataclass
+class Expression:
+    expression: str
+    definitions: List[Definition]
 
 
 @dataclass
@@ -73,20 +84,55 @@ class AdjectiveInflections(Inflections):
 class DictionaryEntry:
     word: str
     part_of_speech: str
+    definitions: List[Definition]
     gender: Optional[str] = None
-    definitions: List[Union[str, List[str]]] = field(default_factory=list)
-    inflections: Inflections = field(default_factory=Inflections)
+    inflections: Optional[Inflections] = None
+    expressions: List[Expression] = field(default_factory=list)
 
     def __post_init__(self):
         self.word = self.word.lower()
         self.part_of_speech = self.part_of_speech.lower()
-        if self.part_of_speech not in self.VALID_PARTS_OF_SPEECH:
+        if self.part_of_speech not in VALID_PARTS_OF_SPEECH:
             raise ValueError(f"Invalid part of speech '{self.part_of_speech}'."
-                             f"Must be one of {', '.join(self.VALID_PARTS_OF_SPEECH)}.")
+                             f"Must be one of {', '.join(VALID_PARTS_OF_SPEECH)}.")
 
         # For nouns, gender must be specified
         if self.part_of_speech == "substantiv" and not self.gender:
             raise ValueError("Gender must be specified for a noun entry.")
+
+    def pretty_print(self):
+        print(f"WORD: {self.word}")
+        print(f"PART OF SPEECH: {self.part_of_speech}")
+        if self.gender:
+            print(f"GENDER: {self.gender}")
+        print()
+        if self.inflections:
+            print("INFLECTIONS:")
+            # Depending on the specific class of inflections, you might want to adjust this
+            for attr, value in self.inflections.__dict__.items():
+                print(f"  {attr}: {value}")
+        print()
+        print("DEFINITIONS:")
+        for definition in self.definitions:
+            print(f"  - Definition: {'; '.join(definition.definition)}")
+            if definition.examples:
+                print("    Examples:")
+                for example in definition.examples:
+                    print(f"      - {example}")
+            print()
+
+        if self.expressions:
+            print("EXPRESSIONS:")
+            for expression in self.expressions:
+                print(f"  - Expression: {expression.expression}")
+                print("    Definitions:")
+                for defn in expression.definitions:
+                    print(f"      - {'; '.join(defn.definition)}")
+                    if defn.examples:
+                        print("        Examples:")
+                        for example in defn.examples:
+                            print(f"          - {example}")
+                print()
 
 
 # Example of usage

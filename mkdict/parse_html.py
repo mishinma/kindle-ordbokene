@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-
-from dict_entry import VerbInflections
+from dict_entry import VerbInflections, Definition, Expression, DictionaryEntry
 
 # Define a custom exception for parsing errors
 class ParseError(Exception):
@@ -119,6 +118,137 @@ def extract_verb_inflections(soup):
     return verb_inflections
 
 
+def parse_definitions(soup):
+
+    section = soup.select_one('section.definitions')
+    if not section:
+        raise ParseError('Definitions section not found in the HTML snippet.')
+    # Assert there is only one li element with definition level1
+    defenitions_lvl1 = section.select('li.definition.level1')
+    if len(defenitions_lvl1) != 1:
+        raise ParseError(f'Unexpected number of definition lvl1 elements ({len(defenitions_lvl1)}).'
+                         'Expected 1.')
+
+    # Find all li elements with class definition level2
+    definitions = defenitions_lvl1[0].select('li.definition.level2')
+
+    parsed_definitions = []
+
+    for definition in definitions:
+        # The explanations text is the li class="explanation" element and
+        # examples are the li class="example" element
+        explanations = definition.select('li.explanation')
+        examples = definition.select('li.example')
+
+        # Extract the text from the explanations and examples
+        explanation_texts = [explanation.get_text(strip=True, separator=' ') for explanation in explanations]
+        example_texts = [example.get_text(strip=True, separator=' ') for example in examples]
+
+        # Append the extracted data to the list
+        parsed_definitions.append(Definition(explanation_texts, example_texts))
+
+    return parsed_definitions
+
+
+# Function to check if a ul element has a class of 'explanations' or 'examples'
+def is_ul_explanations_or_examples(tag):
+    return (tag.name == 'ul' and tag.get('class') and
+            ('explanations' in tag['class'] or 'examples' in tag['class']))
+
+
+def parse_expressions(soup):
+    """ Parse expressions with explanations from the HTML content."""
+    expressions_with_explanations = []
+
+    section = soup.select_one('section.expressions')
+    if not section:
+        return expressions_with_explanations
+
+    # Possible scenarios:
+    # I.
+    # li class sub_article - contains everything
+    #   span class sub_article_header - expression
+    #   ul class explanations
+    #       li class explanation
+    #
+    # II.
+    # li class sub_article - contains everything
+    #   span class sub_article_header - expression
+    #   ul class explanations
+    #       li class explanation
+    #   ul class explanations
+    #       li class explanation
+    #   ul class examples -- related to the last explanation
+    #       li class example
+    #
+    # III.
+    # li class sub_article - contains everything
+    #   span class sub_article_header - expression
+    #   ul class explanations -- empty
+    #   ul class sub_definitions
+    #       ul class explanations
+    #           li class explanation - several explanations
+    #       ul class examples
+    #           li class example - several examples
+    #       repeated for each sub-definition
+    #
+    # IV.
+    # li class sub_article - contains everything
+    #   span class sub_article_header - expression
+    #   ul class sub_definitions
+    #     ul class explanations
+    #       li class explanation
+
+    sub_articles = section.select('li.sub_article')
+    for sub_article in sub_articles:
+
+        expression = sub_article.select_one('span.sub_article_header').get_text(strip=True, separator=' ')
+        # Find all ul elements with the class 'explanations' or 'examples'
+        desired_ul_elements = sub_article.find_all(is_ul_explanations_or_examples)
+
+        explanations_and_examples = []
+        # Extract the text from the explanations and examples
+        for ul in desired_ul_elements:
+            if 'explanations' in ul['class']:
+                explanations = ul.select('li.explanation')
+                explanation_texts = [explanation.get_text(strip=True, separator=' ') for explanation in explanations]
+                if not explanation_texts:
+                    continue
+                explanations_and_examples.append(('explanation', explanation_texts))
+
+            elif 'examples' in ul['class']:
+                examples = ul.select('li.example')
+                example_texts = [example.get_text(strip=True, separator=' ') for example in examples]
+                if not example_texts:
+                    continue
+                explanations_and_examples.append(('example', example_texts))
+
+        # Iterate through the list in reverse to pair explanations with examples
+        # Example will always be after the explanation, but some explanations may not have examples
+        paired_explanations_and_examples = []
+        i = len(explanations_and_examples) - 1
+        while i >= 0:
+            entry = explanations_and_examples[i]
+
+            if entry[0] == 'example':
+                # If the entry is an example, pair it with the last explanation
+                paired_explanations_and_examples.append(Definition(explanations_and_examples[i-1][1], entry[1]))
+                # Remove the paired explanation and example from the list
+                explanations_and_examples.pop(i)
+                explanations_and_examples.pop(i-1)
+                i -= 2
+            else: # If the entry is an explanation, add it to the list
+                paired_explanations_and_examples.append(Definition(entry[1], []))
+                explanations_and_examples.pop(i)
+                i -= 1
+
+        # reverse the list to maintain the order of explanations and examples
+        paired_explanations_and_examples.reverse()
+        expressions_with_explanations.append(Expression(expression, paired_explanations_and_examples))
+
+    return expressions_with_explanations
+
+
 if __name__ == '__main__':
     import os
     # find path to ../html_pages/ and iterate through the .html files
@@ -132,15 +262,28 @@ if __name__ == '__main__':
     #         print(f'{word} - {part_of_speech}')
 
     # find verb-sjonne-cleaned.html
-    html_file = 'verb-sjonne-cleaned.html'
+    html_file = 'verb-sjonne.html'
     with open(os.path.join(html_dir, html_file), 'r', encoding='utf-8') as file:
         html_content = file.read()
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
     word, part_of_speech = extract_word_and_pos(soup)
-    print(f'{word} - {part_of_speech}')
 
     # Example usage with HTML content
     verb_inflections_instance = extract_verb_inflections(soup)
-    print(verb_inflections_instance)
+
+    # Extract definitions and examples
+    definitions = parse_definitions(soup)
+    expressions = parse_expressions(soup)
+
+    dict_entry = DictionaryEntry(
+        word,
+        part_of_speech,
+        definitions,
+        inflections=verb_inflections_instance,
+        expressions=expressions
+        )
+
+    dict_entry.pretty_print()
+
