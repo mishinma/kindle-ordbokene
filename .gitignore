@@ -1,2 +1,5 @@
 .direnv
 __pycache__/
+kindle_compiled/
+pages/
+kindle_dictionary.zip

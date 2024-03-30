@@ -82,6 +82,7 @@ class AdjectiveInflections(Inflections):
 
 @dataclass
 class DictionaryEntry:
+    id: int
     word: str
     part_of_speech: str
     definitions: List[Definition]
@@ -201,36 +202,64 @@ def dictionary_entry_to_html(entry: DictionaryEntry, css_file_path='dictionary_s
 
     return html
 
-# To use this function, simply pass an instance of DictionaryEntry to it.
-# Example usage:
-# html_content = dictionary_entry_to_html(my_entry)
-# This will generate the HTML content string with links to the external CSS for styling.
+
+def dictionary_entry_to_xhtml(entry: DictionaryEntry) -> str:
+    """
+    Generates XHTML content for a Kindle dictionary entry, to be included inside a <mbp:frameset> tag.
+
+    :param entry: DictionaryEntry instance
+    :return: A string containing XHTML representation of the entry
+    """
+    # Initialize the XHTML for the dictionary entry
+    xhtml = f'''
+        <idx:entry name="default" scriptable="yes" spell="yes">
+            <idx:short><a id="{entry.id}"></a>
+                <idx:orth value="{entry.word}">
+                    <b>{entry.word}</b>
+                    {generate_inflections(entry)}
+                </idx:orth>
+                {generate_definitions(entry)}
+            </idx:short>
+        </idx:entry>
+    '''
+
+    return xhtml
 
 
+def generate_inflections(entry):
+    """
+    Generates inflection XHTML for the given entry.
 
-# Example of usage
-if __name__ == "__main__":
-    verb_inflections = VerbInflections(
-        infinitiv="skrive",
-        presens="skriver",
-        preteritum="skrev",
-        presens_perfektum="har skrevet",
-        imperativ="skriv",
-        perfektum_partisipp_hankjonn="skrevet",
-        perfektum_partisipp_hunkjonn="skrevet",
-        perfektum_partisipp_intetkjonn="skrevet",
-        perfektum_partisipp_bestemt_form="skrevne",
-        perfektum_partisipp_flertall="skrevne",
-        presens_partisipp="skrivende",
-    )
+    :param entry: DictionaryEntry instance
+    :return: A string containing inflection XHTML
+    """
+    if not entry.inflections:
+        return ''
 
-    verb_entry = DictionaryEntry(
-        word="å skrive",
-        part_of_speech="verb",
-        definitions=[
-            ("To compose text in a readable form", ["Jeg skriver et brev.", "Hun skrev en bok."])
-        ],
-        inflections=verb_inflections
-    )
+    inflections_xhtml = '<idx:infl>'
+    # for inflection in entry.inflections.values():
+        # inflections_xhtml += f'<idx:iform value="{inflection}"></idx:iform>'
+    # include name of the inflection as well
+    for attr, value in vars(entry.inflections).items():
+        if not attr.startswith("_"):
+            inflections_xhtml += f'<idx:iform name="{attr.replace("_", " ")}" value="{value}"></idx:iform>'
+    inflections_xhtml += '</idx:infl>'
 
-    print(verb_entry)
+    return inflections_xhtml
+
+
+def generate_definitions(entry):
+    """
+    Generates definitions XHTML for the given entry.
+
+    :param entry: DictionaryEntry instance
+    :return: A string containing definitions XHTML
+    """
+    definitions_xhtml = ''
+    for definition in entry.definitions:
+        definitions_xhtml += f'<p>{", ".join(definition.definition)}</p>'
+        if definition.examples:
+            for example in definition.examples:
+                definitions_xhtml += f'<p>{example}</p>'
+
+    return definitions_xhtml

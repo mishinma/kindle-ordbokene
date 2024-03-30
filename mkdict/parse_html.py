@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from bs4 import BeautifulSoup
-from dict_entry import VerbInflections, Definition, Expression, DictionaryEntry
+from mkdict.dict_entry import (
+    VerbInflections, Definition, Expression, DictionaryEntry,
+)
 
 # Define a custom exception for parsing errors
 class ParseError(Exception):
@@ -249,22 +253,14 @@ def parse_expressions(soup):
     return expressions_with_explanations
 
 
-if __name__ == '__main__':
-    import os
-    # find path to ../html_pages/ and iterate through the .html files
-    html_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'html_pages')
-    # for html_file in os.listdir(html_dir):
-    #     if html_file.endswith('.html'):
-    #         with open(os.path.join(html_dir, html_file), 'r', encoding='utf-8') as file:
-    #             html_snippet = file.read()
+def parse_dictionary_entry(file_path: str):
 
-    #         word, part_of_speech = extract_word_and_pos(html_snippet)
-    #         print(f'{word} - {part_of_speech}')
-
-    # find verb-sjonne-cleaned.html
-    html_file = 'verb-ga.html'
-    with open(os.path.join(html_dir, html_file), 'r', encoding='utf-8') as file:
+    file_path = Path(file_path)
+    with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
+
+    # file name is in the form "page_{id}.html"
+    id = str(file_path.name).split('.')[0].split('_')[-1]
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
@@ -278,6 +274,7 @@ if __name__ == '__main__':
     expressions = parse_expressions(soup)
 
     dict_entry = DictionaryEntry(
+        id,
         word,
         part_of_speech,
         definitions,
@@ -285,8 +282,23 @@ if __name__ == '__main__':
         expressions=expressions
         )
 
-    dict_entry.pretty_print()
+    return dict_entry
+
+
+if __name__ == '__main__':
+    import os
     from  dict_entry import dictionary_entry_to_html
+
+    # find path to ../html_pages/ and iterate through the .html files
+    html_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'html_pages')
+
+    # find verb-sjonne-cleaned.html
+    html_file = 'verb-ga.html'
+
+    dict_entry = parse_dictionary_entry(os.path.join(html_dir, html_file))
+
+    dict_entry.pretty_print()
+
     html = dictionary_entry_to_html(dict_entry)
     # prettify with bs4
     soup = BeautifulSoup(html, 'html.parser')

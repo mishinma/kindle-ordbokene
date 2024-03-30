@@ -7,19 +7,29 @@
     <dc:language>no</dc:language>
     <dc:identifier id="bookid" opf:scheme="ISBN">1234567890123</dc:identifier>
     <meta name="cover" content="cover-image" />
+    <x-metadata>
+      <DictionaryInLanguage>no</DictionaryInLanguage>
+      <DictionaryOutLanguage>no</DictionaryOutLanguage>
+      <DefaultLookupIndex>default</DefaultLookupIndex>
+    </x-metadata>
   </metadata>
 
   <manifest>
-    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="content000" href="content/content000.xhtml" media-type="application/xhtml+xml"/>
+    <item id="content000" href="content000.xhtml" media-type="application/xhtml+xml"/>
     <item id="css" href="styles/style.css" media-type="text/css"/>
     <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg"/>
+    <item id="copyright" href="copyright.html" media-type="application/xhtml+xml"/>
     <!-- Add other sections here -->
   </manifest>
 
-  <spine toc="ncx">
+  <spine >
+    <itemfef idref="cover-image"/>
+    <itemfef idref="copyright" />
     <itemref idref="content000"/>
     <!-- Add other itemrefs here -->
   </spine>
+  <!-- <guide>
+    <reference type="index" title="IndexName" href="content.html"/>
+  </guide> -->
 
 </package>
