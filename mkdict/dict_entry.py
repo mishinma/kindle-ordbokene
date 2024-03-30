@@ -53,12 +53,12 @@ class VerbInflections(Inflections):
     presens: str
     preteritum: str
     presens_perfektum: str
-    imperativ: str
-    perfektum_partisipp_hankjonn: str
-    perfektum_partisipp_intetkjonn: str
-    perfektum_partisipp_bestemt_form: str
-    perfektum_partisipp_flertall: str
-    presens_partisipp: str
+    imperativ: Optional[str] = None
+    perfektum_partisipp_hankjonn: Optional[str] = None
+    perfektum_partisipp_intetkjonn: Optional[str] = None
+    perfektum_partisipp_bestemt_form: Optional[str] = None
+    perfektum_partisipp_flertall: Optional[str] = None
+    presens_partisipp: Optional[str] = None
 
 
 @dataclass
@@ -218,8 +218,48 @@ def dictionary_entry_to_xhtml(entry: DictionaryEntry) -> str:
                     <b>{entry.word}</b>
                     {generate_inflections(entry)}
                 </idx:orth>
-                {generate_definitions(entry)}
-            </idx:short>
+        '''
+
+    # Adding gender if available
+    if entry.gender:
+        xhtml += f'<div class="gender"><strong>Gender:</strong> {entry.gender}</div>'
+
+    # Adding inflections if available
+    if entry.inflections:
+        xhtml += '<div class="inflections"><strong>Inflections</strong><ul>'
+        for attr, value in vars(entry.inflections).items():
+            if not attr.startswith("_"):  # Skip private attributes or methods
+                xhtml += f'<li class="inflection-item">{attr.replace("_", " ").capitalize()}: {value}</li>'
+        xhtml += '</ul></div>'
+
+    # Adding definitions and examples
+    xhtml += '<div class="definitions"><strong>Definitions</strong><ul>'
+    for definition in entry.definitions:
+        xhtml += f'<li class="definition-item">{", ".join(definition.definition)}</li>'
+        if definition.examples:
+            xhtml += '<ul class="example-list">'
+            for example in definition.examples:
+                xhtml += f'<li class="example-item">{example}</li>'
+            xhtml += '</ul>'
+    xhtml += '</ul></div>'
+
+    # Adding expressions
+    if entry.expressions:
+        xhtml += '<div class="expressions"><strong>Expressions</strong><ul>'
+        for expression in entry.expressions:
+            xhtml += f'<li class="expression-item"><strong>{expression.expression}</strong><ul>'
+            for definition in expression.definitions:
+                xhtml += f'<li class="expression-definition-item">{", ".join(definition.definition)}</li>'
+                if definition.examples:
+                    xhtml += '<ul class="example-list">'
+                    for example in definition.examples:
+                        xhtml += f'<li class="example-item">{example}</li>'
+                    xhtml += '</ul>'
+            xhtml += '</ul></li>'
+        xhtml += '</ul></div>'
+
+    xhtml += '''
+                </idx:short>
         </idx:entry>
     '''
 
@@ -241,25 +281,25 @@ def generate_inflections(entry):
         # inflections_xhtml += f'<idx:iform value="{inflection}"></idx:iform>'
     # include name of the inflection as well
     for attr, value in vars(entry.inflections).items():
-        if not attr.startswith("_"):
+        if not attr.startswith("_") and value:
             inflections_xhtml += f'<idx:iform name="{attr.replace("_", " ")}" value="{value}"></idx:iform>'
     inflections_xhtml += '</idx:infl>'
 
     return inflections_xhtml
 
 
-def generate_definitions(entry):
-    """
-    Generates definitions XHTML for the given entry.
+# def generate_definitions(entry):
+#     """
+#     Generates definitions XHTML for the given entry.
 
-    :param entry: DictionaryEntry instance
-    :return: A string containing definitions XHTML
-    """
-    definitions_xhtml = ''
-    for definition in entry.definitions:
-        definitions_xhtml += f'<p>{", ".join(definition.definition)}</p>'
-        if definition.examples:
-            for example in definition.examples:
-                definitions_xhtml += f'<p>{example}</p>'
+#     :param entry: DictionaryEntry instance
+#     :return: A string containing definitions XHTML
+#     """
+#     definitions_xhtml = ''
+#     for definition in entry.definitions:
+#         definitions_xhtml += f'<p>{", ".join(definition.definition)}</p>'
+#         if definition.examples:
+#             for example in definition.examples:
+#                 definitions_xhtml += f'<p>{example}</p>'
 
-    return definitions_xhtml
+#     return definitions_xhtml

@@ -36,66 +36,153 @@ def extract_word_and_pos(soup):
     return word, part_of_speech
 
 
+# def flatten_table_headers(header_rows):
+#     """
+#     Flatten table headers from two rows, taking into account colspan and rowspan attributes.
+
+#     Parameters:
+#     - header_rows: A list of <tr> elements representing the header rows of the table.
+
+#     Returns:
+#     - A list of flattened header strings that combine the text from both rows appropriately.
+#     """
+#     # Initialize a list to hold the combined headers
+#     flattened_headers = []
+
+#     # First row headers processing
+#     primary_headers = []
+#     rowspan_bitmask = []
+#     for th in header_rows[0].find_all('th'):
+#         header_text = th.get_text(strip=True, separator=' ').lower()
+#         header_text = ' '.join(header_text.split())  # Normalize whitespace
+#         header_text = header_text.replace(' ', '_')  # Replace spaces with underscores
+#         colspan = int(th.get('colspan', '1'))  # Default colspan to 1 if not specified
+#         rowspan = int(th.get('rowspan', '1'))  # Default rowspan to 1 if not specified
+
+#         # For headers that span multiple columns, repeat the header text in the list
+#         primary_headers.extend([header_text] * colspan)
+#         rowspan_bitmask.extend([rowspan > 1] * colspan)
+
+#     # Second row headers processing, if present
+#     if len(header_rows) > 1:
+#         secondary_headers = [th.get_text(strip=True, separator=' ').lower() for th in header_rows[1].find_all('th')]
+#         secondary_headers = [' '.join(header.split()) for header in secondary_headers]
+#         secondary_headers = [header.replace(' ', '_') for header in secondary_headers]
+
+#         # replace hankjønn_/_hunkjønn with hankjønn
+#         secondary_headers = [header.replace('hankjønn_/_hunkjønn', 'hankjønn') for header in secondary_headers]
+
+#         # Combine the primary and secondary headers
+#         # If a header spans multiple columns, merge
+#         # If a header spans multiple rows,
+
+#         for i in range(len(primary_headers)):
+#             if rowspan_bitmask[i]:
+#                 # If the header spans multiple rows, use only the primary header
+#                 flattened_headers.append(primary_headers[i])
+#             else:
+#                 # If the header only spans one row, combine the primary and secondary headers
+#                 flattened_headers.append(f'{primary_headers[i]}_{secondary_headers[i]}')
+
+
+#     else:
+#         # If there's only one header row, use the primary headers directly
+#         flattened_headers = primary_headers
+
+#     return flattened_headers
+
+
+def is_empty_row(row):
+    return not row.find_all('td') and not row.find_all('th')
+
+
 def parse_verb_basic_inflections(table):
     verb_forms = {}
     rows = table.find_all('tr')
+    # Exclude empty rows, that don't include any td or th elements
+    rows = [row for row in rows if not is_empty_row(row)]
     if len(rows) != 2:
         raise ParseError(f'Unexpected number of rows in the table ({len(rows)}). Expected 2.')
 
+    # Parse the header row for the verb forms
+    name_cells = rows[0].find_all('th')
     # Assuming the first row is headers and the second row contains the verb forms
-    cells = rows[1].find_all('td')
-    if len(cells) != 5:
-        raise ParseError(f'Unexpected number of cells in the table ({len(cells)}). Expected 5.')
+    verb_form_cells = rows[1].find_all('td')
 
-    for i, cell in enumerate(cells):
-        verb_form = cell.get_text(strip=True, separator=' ')
+    for name_cell, verb_form_cell in zip(name_cells, verb_form_cells):
+        form_name = name_cell.get_text(strip=True, separator=' ')
+        form_name = ' '.join(form_name.split())  # Normalize whitespace
+        form_name = form_name.replace(' ', '_')
+        verb_form = verb_form_cell.get_text(strip=True, separator=' ')
         verb_form = verb_form.split('+')[0].strip()  # Removing contextual info if present
-        if i == 0:
-            # Clean å from the infinitive form, before the verb
-            if verb_form.startswith('å '):
-                verb_form = verb_form[2:]
-            verb_forms['infinitiv'] = verb_form.strip()
-        elif i == 1:
-            verb_forms['presens'] = verb_form
-        elif i == 2:
-            verb_forms['preteritum'] = verb_form
-        elif i == 3:
-            verb_forms['presens_perfektum'] = verb_form
-        elif i == 4:
-            if verb_form.endswith('!'):
-                verb_form = verb_form[:-1]
-            verb_forms['imperativ'] = verb_form.strip()
+
+        # Clean å from the infinitive form, before the verb
+        if verb_form.startswith('å '):
+            verb_form = verb_form[2:]
+
+        if verb_form.endswith('!'):
+            verb_form = verb_form[:-1]
+
+        verb_form = verb_form.strip()
+        verb_forms[form_name] = verb_form
+
     return verb_forms
 
 
 def parse_verb_participle_inflections(table):
     participle_forms = {}
     rows = table.find_all('tr')
-    # For participle forms, there should be 3 rows, 2 headers and 1 with verb forms
-    if len(rows) != 3:
-        raise ParseError(f'Unexpected number of rows in the table ({len(rows)}). Expected 3.')
 
-    # Assuming the first two rows are headers and the third row contains the verb forms
-    cells = rows[2].find_all('td')
-    if len(cells) != 5:
-        raise ParseError(f'Unexpected number of cells in the table ({len(cells)}). Expected 5.')
+    # Exclude empty rows
+    rows = [row for row in rows if not is_empty_row(row)]
 
-    for i, cell in enumerate(cells):
-        participle_form = cell.get_text(strip=True, separator=' ')
-        participle_form = participle_form.split('+')[0].strip()
-        if i == 0:
-            participle_forms['perfektum_partisipp_hankjonn'] = participle_form
-        elif i == 1:
-            participle_forms['perfektum_partisipp_intetkjonn'] = participle_form
-        elif i == 2:
-            # if starts with den/det remove it
-            if participle_form.startswith('den/det '):
-                participle_form = participle_form[8:]
-            participle_forms['perfektum_partisipp_bestemt_form'] = participle_form.strip()
-        elif i == 3:
-            participle_forms['perfektum_partisipp_flertall'] = participle_form
-        elif i == 4:
-            participle_forms['presens_partisipp'] = participle_form
+    if len(rows) == 3:
+        # Assuming the first two rows are headers and the third row contains the verb forms
+        cells = rows[2].find_all('td')
+        if len(cells) != 5:
+            raise ParseError(f'Unexpected number of cells in the table ({len(cells)}). Expected 5.')
+
+        # Here we make a hard assumption that the order of the cells is as follows:
+        for i, cell in enumerate(cells):
+            participle_form = cell.get_text(strip=True, separator=' ')
+            participle_form = participle_form.split('+')[0].strip()
+            if i == 0:
+                participle_forms['perfektum_partisipp_hankjonn'] = participle_form
+            elif i == 1:
+                participle_forms['perfektum_partisipp_intetkjonn'] = participle_form
+            elif i == 2:
+                # if starts with den/det remove it
+                if participle_form.startswith('den/det '):
+                    participle_form = participle_form[8:]
+                participle_forms['perfektum_partisipp_bestemt_form'] = participle_form.strip()
+            elif i == 3:
+                participle_forms['perfektum_partisipp_flertall'] = participle_form
+            elif i == 4:
+                participle_forms['presens_partisipp'] = participle_form
+    elif len(rows) == 2:
+        # Parse basic
+        # Parse the header row for the verb forms
+        name_cells = rows[0].find_all('th')
+        # Assuming the first row is headers and the second row contains the verb forms
+        participle_form_cells = rows[1].find_all('td')
+
+        for name_cell, particile_form_cell in zip(name_cells, participle_form_cells):
+            form_name = name_cell.get_text(strip=True, separator=' ')
+            form_name = ' '.join(form_name.split())  # Normalize whitespace
+            form_name = form_name.replace(' ', '_')
+            participle_form = particile_form_cell.get_text(strip=True, separator=' ')
+            participle_form = participle_form.split('+')[0].strip()  # Removing contextual info if present
+
+            # Clean å from the infinitive form, before the verb
+            if participle_form.startswith('å '):
+                participle_form = participle_form[2:]
+
+            if participle_form.endswith('!'):
+                participle_form = participle_form[:-1]
+
+            participle_form = participle_form.strip()
+            participle_forms[form_name] = participle_form
+
     return participle_forms
 
 
@@ -103,16 +190,19 @@ def extract_verb_inflections(soup):
 
     tables = soup.find_all('table')[:2]  # Extract the first two tables
 
-    if len(tables) != 2:
-        raise ParseError(f'Unexpected number of tables in the HTML snippet ({len(tables)}). Expected 2.')
+    if len(tables) < 1:
+        raise ParseError(f'Unexpected number of tables in the HTML snippet ({len(tables)}). Expected at least 2.')
 
     basic_inflections_table = tables[0]
-    participle_inflections_table = tables[1]
-
     # Parse the first table for basic verb forms
     basic_verb_forms = parse_verb_basic_inflections(basic_inflections_table)
-    # Parse the second table for participle forms
-    participle_forms = parse_verb_participle_inflections(participle_inflections_table)
+
+    # Parse the second table for participle forms if present
+    if len(tables) > 1:
+        participle_inflections_table = tables[1]
+        participle_forms = parse_verb_participle_inflections(participle_inflections_table)
+    else:
+        participle_forms = {}
 
     # Create a VerbInflections instance with the combined data
 
