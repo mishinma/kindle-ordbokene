@@ -215,33 +215,30 @@ def dictionary_entry_to_xhtml(entry: DictionaryEntry) -> str:
         <idx:entry name="default" scriptable="yes" spell="yes">
             <idx:short><a id="{entry.id}"></a>
                 <idx:orth value="{entry.word}">
-                    <b>{entry.word}</b>
+                    {generate_headword(entry)}
                     {generate_inflections(entry)}
                 </idx:orth>
         '''
 
-    # Adding gender if available
-    if entry.gender:
-        xhtml += f'<div class="gender"><strong>Gender:</strong> {entry.gender}</div>'
-
     # Adding inflections if available
+    # if entry.inflections:
+    #     xhtml += '<div class="inflections"><strong>Inflections</strong><ul>'
+    #     for attr, value in vars(entry.inflections).items():
+    #         if not attr.startswith("_"):  # Skip private attributes or methods
+    #             xhtml += f'<li class="inflection-item">{attr.replace("_", " ").capitalize()}: {value}</li>'
+    #     xhtml += '</ul></div>'
+
     if entry.inflections:
-        xhtml += '<div class="inflections"><strong>Inflections</strong><ul>'
-        for attr, value in vars(entry.inflections).items():
-            if not attr.startswith("_"):  # Skip private attributes or methods
-                xhtml += f'<li class="inflection-item">{attr.replace("_", " ").capitalize()}: {value}</li>'
-        xhtml += '</ul></div>'
+        xhtml += generate_inflections_tables_verb(entry)
 
     # Adding definitions and examples
-    xhtml += '<div class="definitions"><strong>Definitions</strong><ul>'
+    xhtml += '<div class="definitions"><ol>'
     for definition in entry.definitions:
-        xhtml += f'<li class="definition-item">{", ".join(definition.definition)}</li>'
+        xhtml += f'<li class="definition-item">{"; ".join(definition.definition)}</li>'
         if definition.examples:
-            xhtml += '<ul class="example-list">'
             for example in definition.examples:
-                xhtml += f'<li class="example-item">{example}</li>'
-            xhtml += '</ul>'
-    xhtml += '</ul></div>'
+                xhtml += f'<span class="example-item">{example}</span>'
+    xhtml += '</ol></div>'
 
     # Adding expressions
     if entry.expressions:
@@ -266,6 +263,20 @@ def dictionary_entry_to_xhtml(entry: DictionaryEntry) -> str:
     return xhtml
 
 
+def generate_headword(entry):
+    """
+    Generates the headword XHTML for the given entry.
+
+    :param entry: DictionaryEntry instance
+    :return: A string containing headword XHTML
+    """
+    headword = f"<b>{entry.word}</b> {entry.part_of_speech}"
+    if entry.gender:
+        headword += f" ({entry.gender})"
+
+    return headword
+
+
 def generate_inflections(entry):
     """
     Generates inflection XHTML for the given entry.
@@ -286,6 +297,35 @@ def generate_inflections(entry):
     inflections_xhtml += '</idx:infl>'
 
     return inflections_xhtml
+
+
+def generate_inflections_tables_verb(entry):
+    """
+    Generates inflection table XHTML for the given entry.
+
+    :param entry: DictionaryEntry instance
+    :return: A string containing inflection table XHTML
+    """
+    if not entry.inflections:
+        return ''
+
+    inflections_xhtml = '<table class="inflections-table">'
+
+    basic_inflections = ['infinitiv', 'presens', 'preteritum', 'presens perfektum']
+    basic_inflections_table = inflections_xhtml + '<thead><tr>'
+    for inflection in basic_inflections:
+        basic_inflections_table += f'<th>{inflection}</th>'
+    if entry.inflections.imperativ:
+        basic_inflections_table += '<th>imperativ</th>'
+    basic_inflections_table += '</tr></thead><tbody><tr>'
+
+    for inflection in basic_inflections:
+        basic_inflections_table += f'<td>{entry.inflections.infinitiv}</td>'
+    if entry.inflections.imperativ:
+        basic_inflections_table += f'<td>{entry.inflections.imperativ}</td>'
+    basic_inflections_table += '</tr></tbody></table>'
+
+    return basic_inflections_table
 
 
 # def generate_definitions(entry):
